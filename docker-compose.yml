@@ -1,0 +1,79 @@
+version: "3.9"
+services:
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: mssql_server
+    # restart: always
+    ports:
+      - '1433:1433'
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=@StrongPassword981
+    # command: redis-server --save 20 1 --loglevel warning
+    volumes:
+      - database:/data
+
+
+ #Botmecash Exchange Backend
+  bookstore_user:
+    build: .
+    image: bookstore_user
+    container_name: bookstore_user_api
+    tty: false
+    stdin_open: true
+    links:
+       - mssql
+    depends_on:
+      - mssql
+    #Web API ports
+    ports:
+      - "7147:7147"   #HTTPS Port
+      - "5237:5237"     #HTTP Port
+    #Mounts shared between host and docker container
+    volumes:
+        #Book Store User Backend
+        - type: bind
+          source: ./BookStoreUser
+          target: /root/BookStoreUser
+    #Access to the Docker host for SQL
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    user: root
+    #Startup commands
+    command: >
+      bash -c "
+      cd /root/BookStoreUser
+      && dotnet run
+      && tail -f /dev/null"
+
+#Botmecash Bitcoin and  API
+  bookstore:
+    build: .
+    image: bookstore
+    container_name: bookstore_api
+    tty: false
+    stdin_open: true
+    #Book Store Ports 
+    ports:
+      - "5108:5108" #HTTP Port
+      - "7115:7115" #HTTPS Port
+    #Mounts shared between host and docker container
+    volumes:
+        #Bitcoin Core Backend
+        - type: bind
+          source: ./BookStore
+          target: /root/BookStore
+    #Access to the Docker host for SQL
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    user: root
+    #Startup commands
+    command: >
+      bash -c "
+      cd /root/BookStore
+      && dotnet run
+      && tail -f /dev/null"
+
+volumes:
+  database:
+    driver: local
