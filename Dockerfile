@@ -7,8 +7,7 @@ WORKDIR /root
 #Build the enviorment
 RUN apt-get update\
     && DEBIAN_FRONTEND=noninteractive TZ=US/Pacific apt-get -y install tzdata\
-    && apt-get -y install\
-        dotnet7
+    && apt-get -y install dotnet-sdk-7.0
 
 COPY . ./
 
